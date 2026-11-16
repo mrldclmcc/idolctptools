@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- ┌──────────────────────────────────────────────────────────────┐ -->
+  <!-- │  PASTE YOUR BOOKMARKLET CODE HERE                              │ -->
+  <!-- │                                                                │ -->
+  <!-- │  Replace the empty string below (between the backticks) with   │ -->
+  <!-- │  the full javascript:(...) bookmarklet code — the URL-encoded  │ -->
+  <!-- │  version, exactly as you would paste it into a bookmark's URL  │ -->
+  <!-- │  field. Backticks are used as the delimiter so that single or  │ -->
+  <!-- │  double quotes inside the bookmarklet do not need to be        │ -->
+  <!-- │  escaped. If your bookmarklet contains a literal backtick      │ -->
+  <!-- │  character, escape it with a leading backslash: \`             │ -->
+  <!-- │                                                                │ -->
+  <!-- │  Example:                                                      │ -->
+  <!-- │    const BOOKMARKLET_HREF = `javascript:(function()%7B...%7D)()`; -->
+  <!-- └──────────────────────────────────────────────────────────────┘ -->
+  <script>
+    const BOOKMARKLET_HREF = `javascript:(function()%7B%20(function()%7B%20'use%20strict';%20var%20BASE='https://webapps.illinois.gov/DOL/PayrollCertification';%20var%20DOWNLOAD_URL=BASE+'/public/report/FOIADownload';%20var%20CHECKFOIA_URL=BASE+'/public/report/checkfoia';%20var%20DELAY_MS=2500;%20var%20RETRY_ONCE=true;%20var%20ALLOWED_COUNTIES=%5B'Boone','Cook','Dupage','Grundy','Kane','Kendall','Lake','McHenry','Will'%5D;%20var%20allowedLookup=%7B%7D;%20function%20normalizeCounty(s)%7B%20if(!s)return%20'';%20s=s.trim().toLowerCase();%20s=s.replace(/%5Cs+county%5Cs*$/i,'');%20s=s.replace(/%5B%5Ea-z%5D/g,'');%20return%20s;%20%7D%20ALLOWED_COUNTIES.forEach(function(c)%7BallowedLookup%5BnormalizeCounty(c)%5D=true;%7D);%20function%20val(id)%7B%20var%20el=document.getElementById(id);%20return%20el?(el.value%7C%7C'').trim():'';%20%7D%20var%20searchFields=%7B%20'Search.ProjectNumber':val('Search_ProjectNumber'),%20'Search.CompanyContractor':val('Search_CompanyContractor'),%20'Search.PublicBody':val('Search_PublicBody'),%20'Search.ProjectCounty':val('Search_ProjectCounty'),%20'Search.StartDate':val('Search_StartDate'),%20'Search.EndDate':val('Search_EndDate')%20%7D;%20if(!searchFields%5B'Search.ProjectNumber'%5D&&!searchFields%5B'Search.CompanyContractor'%5D)%7B%20try%7B%20var%20u=new%20URL(window.location.href);%20Object.keys(searchFields).forEach(function(k)%7B%20searchFields%5Bk%5D=u.searchParams.get(k)%7C%7C'';%20%7D);%20%7Dcatch(e)%7B%7D%20%7D%20function%20isGuid(s)%7B%20return/%5E%5B0-9a-f%5D%7B8%7D-%5B0-9a-f%5D%7B4%7D-%5B0-9a-f%5D%7B4%7D-%5B0-9a-f%5D%7B4%7D-%5B0-9a-f%5D%7B12%7D$/i.test(s);%20%7D%20var%20guidRe=/%5B0-9a-f%5D%7B8%7D-%5B0-9a-f%5D%7B4%7D-%5B0-9a-f%5D%7B4%7D-%5B0-9a-f%5D%7B4%7D-%5B0-9a-f%5D%7B12%7D/i;%20function%20findCountyColumn()%7B%20var%20tables=document.querySelectorAll('table');%20for(var%20t=0;t%3Ctables.length;t++)%7B%20var%20table=tables%5Bt%5D;%20var%20headerCells=table.querySelectorAll('thead%20th,%20thead%20td,%20tr:first-child%20th,%20tr%20th');%20for(var%20i=0;i%3CheaderCells.length;i++)%7B%20var%20txt=(headerCells%5Bi%5D.textContent%7C%7C'').trim();%20if(/project%5Cs*county/i.test(txt))%7B%20return%7Btable:table,column:i%7D;%20%7D%20%7D%20%7D%20return%20null;%20%7D%20function%20findRow(el)%7B%20var%20node=el;%20for(var%20i=0;i%3C20&&node&&node!==document.body;i++)%7B%20var%20tag=node.tagName;%20if(tag==='TR')return%20node;%20node=node.parentElement;%20%7D%20return%20el.parentElement%7C%7Cel;%20%7D%20function%20getCountyForLink(link,countyCol)%7B%20if(!countyCol)return%20'';%20var%20row=findRow(link);%20if(!row%7C%7Crow.tagName!=='TR')return%20'';%20var%20cells=row.cells;%20if(!cells%7C%7CcountyCol.column%3E=cells.length)return%20'';%20var%20cell=cells%5BcountyCol.column%5D;%20if(!cell)return%20'';%20return%20normalizeCounty(cell.textContent%7C%7C'');%20%7D%20function%20getCountyFromLabelPattern(link)%7B%20var%20row=findRow(link);%20if(!row)return%20'';%20var%20cells=row.querySelectorAll('td,th,div,span,dd,dt,li');%20for(var%20i=0;i%3Ccells.length;i++)%7B%20var%20txt=(cells%5Bi%5D.textContent%7C%7C'').trim();%20if(!txt)continue;%20var%20m=txt.match(/(?:project%5Cs*)?county%5Cs*:?%5Cs*(%5BA-Za-z%5D%5BA-Za-z%5Cs%5D%7B1,30%7D)$/i);%20if(m)%7B%20return%20normalizeCounty(m%5B1%5D);%20%7D%20%7D%20return%20'';%20%7D%20function%20collectIds()%7B%20var%20ids=%5B%5D;%20var%20skipped=0;%20var%20unknown=0;%20function%20add(id)%7Bif(id&&isGuid(id)&&ids.indexOf(id)===-1)ids.push(id)%7D%20var%20countyCol=findCountyColumn();%20console.log('%5BIDOL-FOIA%5D%20county%20column%20detection:',countyCol?%20('found%20%22Project%20County%22%20at%20table%20column%20'+countyCol.column):%20'no%20%3Cth%3E%20with%20%22Project%20County%22%20found%20-%20will%20fall%20back%20to%20label%20pattern');%20function%20countyForLink(link)%7B%20if(countyCol)%7B%20var%20c=getCountyForLink(link,countyCol);%20if(c)return%20c;%20return%20getCountyFromLabelPattern(link);%20%7D%20return%20getCountyFromLabelPattern(link);%20%7D%20document.querySelectorAll('a.FOIA').forEach(function(a)%7B%20var%20c=countyForLink(a);%20if(c&&allowedLookup%5Bc%5D)%7B%20add(a.id);%20%7Delse%7B%20if(c)%7Bskipped++%7Delse%7Bunknown++%7D%20%7D%20%7D);%20document.querySelectorAll('a%5Bhref*=%22CertifiedPayrollReport%22%5D').forEach(function(a)%7B%20var%20c=countyForLink(a);%20if(c&&allowedLookup%5Bc%5D)%7B%20var%20m=a.getAttribute('href').match(/ContractorID=(%5B0-9a-f-%5D%7B36%7D)/i);%20if(m)add(m%5B1%5D);%20%7Delse%7B%20if(c)%7Bskipped++%7Delse%7Bunknown++%7D%20%7D%20%7D);%20if(!ids.length)%7B%20var%20ci=document.getElementById('ContractorId');%20if(ci)add(ci.value);%20%7D%20if(!ids.length)%7B%20var%20html=document.documentElement.outerHTML;%20var%20re=new%20RegExp(guidRe.source,'gi');%20var%20m;%20while((m=re.exec(html))!==null)add(m%5B0%5D);%20%7D%20return%7Bids:ids,skipped:skipped,unknown:unknown,headerFound:!!countyCol%7D;%20%7D%20var%20collectResult=collectIds();%20var%20contractorIds=collectResult.ids;%20var%20skippedCount=collectResult.skipped;%20var%20unknownCount=collectResult.unknown;%20var%20headerFound=collectResult.headerFound;%20if(!contractorIds.length)%7B%20var%20msg='IDOL%20FOIA%20bookmarklet%20(county-filtered):%20no%20matching%20rows%20on%20this%20page.%5Cn'+%20'Allowed%20counties:%20'+ALLOWED_COUNTIES.join(',%20')+'%5Cn'+%20(skippedCount?('Skipped%20'+skippedCount+'%20row(s)%20whose%20Project%20County%20was%20an%20Illinois%20county%20not%20in%20the%20allowed%20list.%5Cn'):'')+%20(unknownCount?('Could%20not%20determine%20Project%20County%20for%20'+unknownCount+'%20row(s).%5Cn'):'')+%20(!headerFound?('No%20%22Project%20County%22%20column%20header%20was%20found%20-%20using%20label-pattern%20fallback.%5Cn'):'')+%20'Make%20sure%20you%20are%20on%20the%20search%20results%20page%20at%5Cn'+%20'webapps.illinois.gov/DOL/PayrollCertification/public/home?Search...';%20alert(msg);%20return;%20%7D%20var%20overlay=document.createElement('div');%20overlay.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;'+%20'background:%231f2937;color:%23f9fafb;font:13px/1.5%20-apple-system,Segoe%20UI,Roboto,sans-serif;'+%20'padding:12px%2014px;border-radius:8px;box-shadow:0%208px%2024px%20rgba(0,0,0,.35);'+%20'min-width:320px;max-width:420px';%20overlay.innerHTML='%3Cdiv%20style=%22font-weight:600;margin-bottom:6px%22%3EIDOL%20FOIA%20bulk%20download%20%3Cspan%20style=%22opacity:.7;font-weight:400%22%3E(county-filtered)%3C/span%3E%3C/div%3E'+%20'%3Cdiv%20id=%22idolfoia-status%22%3EStarting...%3C/div%3E'+%20'%3Cdiv%20id=%22idolfoia-bar%22%20style=%22margin-top:8px;height:6px;background:%23374151;border-radius:4px;overflow:hidden%22%3E'+%20'%3Cdiv%20id=%22idolfoia-fill%22%20style=%22width:0%25;height:100%25;background:%2322c55e;transition:width%20.25s%22%3E%3C/div%3E'+%20'%3C/div%3E'+%20'%3Cdiv%20style=%22margin-top:8px;font-size:11px;opacity:.75%22%3E'+%20'%3Ca%20id=%22idolfoia-cancel%22%20href=%22%23%22%20style=%22color:%2393c5fd%22%3Ecancel%3C/a%3E'+%20'%3C/div%3E';%20document.body.appendChild(overlay);%20var%20statusEl=overlay.querySelector('%23idolfoia-status');%20var%20fillEl=overlay.querySelector('%23idolfoia-fill');%20var%20cancelEl=overlay.querySelector('%23idolfoia-cancel');%20var%20cancelled=false;%20cancelEl.addEventListener('click',function(e)%7Be.preventDefault();cancelled=true%7D);%20function%20setStatus(msg,pct)%7B%20statusEl.textContent=msg;%20if(typeof%20pct==='number')fillEl.style.width=Math.max(0,Math.min(100,pct))+'%25';%20%7D%20function%20postOne(contractorId)%7B%20var%20params=new%20URLSearchParams();%20params.append('ContractorId',contractorId);%20Object.keys(searchFields).forEach(function(k)%7Bparams.append(k,searchFields%5Bk%5D)%7D);%20return%20fetch(DOWNLOAD_URL,%7B%20method:'POST',%20credentials:'include',%20headers:%7B'Content-Type':'application/x-www-form-urlencoded'%7D,%20body:params.toString()%20%7D).then(function(resp)%7B%20if(!resp.ok)throw%20new%20Error('HTTP%20'+resp.status);%20var%20cd=resp.headers.get('Content-Disposition')%7C%7C'';%20var%20m=cd.match(/filename%5C*?=(?:UTF-8'')?%5B%22%5C'%5D?(%5B%5E%22%5C';%5D+)/i);%20var%20filename=m?m%5B1%5D:('payroll_'+contractorId.slice(0,8)+'.pdf');%20return%20resp.blob().then(function(blob)%7B%20if(!blob%7C%7Cblob.size===0)throw%20new%20Error('empty%20response');%20saveBlob(blob,filename);%20return%20filename;%20%7D);%20%7D);%20%7D%20function%20saveBlob(blob,filename)%7B%20var%20objUrl=URL.createObjectURL(blob);%20var%20a=document.createElement('a');%20a.href=objUrl;%20a.download=filename;%20document.body.appendChild(a);%20a.click();%20document.body.removeChild(a);%20setTimeout(function()%7BURL.revokeObjectURL(objUrl)%7D,4000);%20%7D%20function%20sleep(ms)%7Breturn%20new%20Promise(function(r)%7BsetTimeout(r,ms)%7D)%7D%20function%20checkFoia()%7B%20var%20criteria=%5B%20searchFields%5B'Search.ProjectNumber'%5D,%20searchFields%5B'Search.CompanyContractor'%5D,%20searchFields%5B'Search.PublicBody'%5D,%20searchFields%5B'Search.ProjectCounty'%5D,%20searchFields%5B'Search.StartDate'%5D,%20searchFields%5B'Search.EndDate'%5D%20%5D.join('&');%20var%20qs=new%20URLSearchParams(%7Bcriteria:criteria%7D).toString();%20return%20fetch(CHECKFOIA_URL+'?'+qs,%7Bcredentials:'include'%7D)%20.then(function(r)%7Breturn%20r.json()%7D)%20.catch(function()%7Breturn%20null%7D);%20%7D%20async%20function%20run()%7B%20console.log('%25c%5BIDOL-FOIA%5D%20found%20'+contractorIds.length+'%20FOIA%20contractor%20id(s)%20in%20allowed%20counties:','color:%232563eb;font-weight:bold');%20console.log(contractorIds);%20console.log('%5BIDOL-FOIA%5D%20county%20column%20detected%20via%20%3Cth%3E%20%22Project%20County%22:',headerFound);%20if(skippedCount%3E0)%7B%20console.log('%5BIDOL-FOIA%5D%20skipped%20'+skippedCount+'%20row(s)%20whose%20Project%20County%20was%20a%20non-allowed%20Illinois%20county.');%20%7D%20if(unknownCount%3E0)%7B%20console.log('%5BIDOL-FOIA%5D%20could%20not%20determine%20Project%20County%20for%20'+unknownCount+'%20row(s)%20-%20skipped%20conservatively.');%20%7D%20console.log('%5BIDOL-FOIA%5D%20search%20fields:',searchFields);%20setStatus('Checking%20prior%20FOIA%20status...',0);%20var%20prior=await%20checkFoia();%20if(prior)%7B%20console.log('%25c%5BIDOL-FOIA%5D%20prior%20FOIA%20already%20on%20file%20for%20these%20criteria%20--%20downloads%20unlocked.','color:%2316a34a;font-weight:bold');%20setStatus('Prior%20FOIA%20found.%20Downloading%20'+contractorIds.length+'%20PDFs%20(county-filtered)...',0);%20%7Delse%7B%20console.log('%25c%5BIDOL-FOIA%5D%20no%20prior%20FOIA%20--%20first%20POST%20will%20create%20the%20FOIA%20request.','color:%23d97706;font-weight:bold');%20var%20ok=confirm('No%20prior%20FOIA%20request%20is%20on%20file%20for%20these%20search%20criteria.%5Cn%5Cn'+%20'Clicking%20OK%20will%20POST%20to%20/public/report/FOIADownload%20for%20all%20'+contractorIds.length+%20'%20contractor%20row(s)%20whose%20Project%20County%20is%20in:%5Cn'+ALLOWED_COUNTIES.join(',%20')+'%5Cn%5Cn'+%20(skippedCount?('('+skippedCount+'%20non-matching%20row(s)%20skipped)%5Cn%5Cn'):'')+%20(unknownCount?('('+unknownCount+'%20row(s)%20had%20no%20readable%20Project%20County%20-%20skipped)%5Cn%5Cn'):'')+%20'The%20first%20request%20also%20creates%20the%20FOIA%20on%20the%20server%20side%20(records%20become%20available%20for%20'+%20'5%20days,%20just%20like%20clicking%20FOIA%20-%3E%20Submit%20manually).%5Cn%5CnProceed?');%20if(!ok)%7BsetStatus('Cancelled%20by%20user.',100);return%7D%20setStatus('Downloading%20'+contractorIds.length+'%20PDFs%20(county-filtered)...',0);%20%7D%20var%20succeeded=0,failed=%5B%5D;%20for(var%20i=0;i%3CcontractorIds.length;i++)%7B%20if(cancelled)%7BsetStatus('Cancelled.',100*i/contractorIds.length);break%7D%20var%20id=contractorIds%5Bi%5D;%20setStatus('Downloading%20'+(i+1)+'/'+contractorIds.length+'%5Cn'+id,100*i/contractorIds.length);%20try%7B%20var%20fn=await%20postOne(id);%20succeeded++;%20console.log('%5BIDOL-FOIA%5D%20OK%20'+id+'%20-%3E%20'+fn);%20%7Dcatch(err)%7B%20if(RETRY_ONCE&&!cancelled)%7B%20await%20sleep(1500);%20try%7B%20var%20fn2=await%20postOne(id);%20succeeded++;%20console.log('%5BIDOL-FOIA%5D%20OK%20(retry)%20'+id+'%20-%3E%20'+fn2);%20%7Dcatch(e2)%7B%20failed.push(id);%20console.warn('%5BIDOL-FOIA%5D%20FAIL%20'+id,e2);%20%7D%20%7Delse%7B%20failed.push(id);%20console.warn('%5BIDOL-FOIA%5D%20FAIL%20'+id,err);%20%7D%20%7D%20if(i%3CcontractorIds.length-1&&!cancelled)await%20sleep(DELAY_MS);%20%7D%20var%20summary='Done.%20'+succeeded+'/'+contractorIds.length+'%20downloaded.';%20if(failed.length)summary+='%20Failed:%20'+failed.length+'%20(see%20console).';%20if(skippedCount%3E0)summary+='%20Skipped%20'+skippedCount+'%20non-matching%20county%20row(s).';%20if(unknownCount%3E0)summary+='%20'+unknownCount+'%20row(s)%20had%20no%20readable%20county.';%20setStatus(summary,100);%20console.log('%25c%5BIDOL-FOIA%5D%20'+summary,'color:%2316a34a;font-weight:bold');%20if(failed.length)console.log('%5BIDOL-FOIA%5D%20failed%20ids:',failed);%20%7D%20run();%20%7D)();%20%7D)();`;
+  </script>
+  <!-- └──────────────────────────────────────────────────────────────┘ -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Tools for downloading and processing IDOL Certified Payroll Transcript PDFs.">
+  <meta name="color-scheme" content="light dark">
+  <title>Tools for IDOL Certified Payroll Transcript Processing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --bg:           #ffffff;
+      --fg:           #0a0a0a;
+      --muted:        #6e6e6e;
+      --faint:        #a8a8a8;
+      --border:       #e4e4e4;
+      --border-strong:#c4c4c4;
+      --surface:      #f6f6f6;
+      --accent-blue:  #0046c8;
+      --accent-orange:#c2410c;
+      --accent-orange-soft: rgba(194, 65, 12, 0.12);
+
+      --max-w:   720px;
+      --pad-x:   clamp(1.25rem, 5vw, 3rem);
+      --pad-y:   clamp(3rem, 8vw, 5.5rem);
+      --mono:    'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg:           #0b0b0c;
+      --fg:           #ededed;
+      --muted:        #9a9a9a;
+      --faint:        #5e5e5e;
+      --border:       #1f1f22;
+      --border-strong:#34343a;
+      --surface:      #15151a;
+      --accent-blue:  #6ba0ff;
+      --accent-orange:#ff9050;
+      --accent-orange-soft: rgba(255, 144, 80, 0.14);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: "calt" 1, "liga" 1;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Topbar ─────────────────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.9rem var(--pad-x);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .topbar .crumb {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .topbar .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-orange);
+      flex-shrink: 0;
+    }
+
+    .topbar .meta {
+      color: var(--faint);
+      font-size: 0.68rem;
+    }
+
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--border-strong);
+      color: var(--fg);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .theme-toggle:hover {
+      background: var(--surface);
+      border-color: var(--fg);
+    }
+
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 2px;
+    }
+
+    .theme-toggle svg {
+      width: 11px;
+      height: 11px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Main ───────────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      max-width: var(--max-w);
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--pad-y) var(--pad-x);
+    }
+
+    h1 {
+      font-size: clamp(1.25rem, 3.4vw, 1.625rem);
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      margin: 0 0 3.5rem;
+      max-width: 34rem;
+    }
+
+    h1::after {
+      content: '';
+      display: block;
+      width: 2rem;
+      height: 2px;
+      background: var(--accent-orange);
+      margin-top: 1.4rem;
+    }
+
+    /* ─── Steps ──────────────────────────────────────────────────── */
+    .step {
+      margin-bottom: 3.75rem;
+    }
+
+    .step:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.85rem;
+      margin-bottom: 1rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .step-num {
+      color: var(--accent-orange);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .step-divider {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      align-self: center;
+    }
+
+    .step-body {
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--fg);
+      max-width: 40rem;
+    }
+
+    .step-body p {
+      margin: 0 0 1.5rem;
+    }
+
+    .step-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ─── Bookmarklet chip ───────────────────────────────────────── */
+    .bookmarklet {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.75rem 1.1rem 0.75rem 0.9rem;
+      background: var(--bg);
+      border: 1px dashed var(--border-strong);
+      color: var(--fg);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, border-style 0.15s ease;
+      margin-top: 0.25rem;
+    }
+
+    .bookmarklet:hover {
+      border-color: var(--accent-blue);
+      border-style: solid;
+      color: var(--accent-blue);
+    }
+
+    .bookmarklet:active {
+      cursor: grabbing;
+    }
+
+    .bookmarklet:focus-visible {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 3px;
+    }
+
+    .bookmarklet .grip {
+      color: var(--faint);
+      flex-shrink: 0;
+      transition: color 0.15s ease;
+    }
+
+    .bookmarklet:hover .grip {
+      color: var(--accent-blue);
+    }
+
+    .bookmarklet .name {
+      font-weight: 500;
+    }
+
+    .bookmarklet .hint {
+      color: var(--faint);
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      padding-left: 0.4rem;
+      margin-left: 0.25rem;
+      border-left: 1px solid var(--border);
+    }
+
+    .bookmarklet.disabled {
+      border-color: var(--accent-orange);
+      border-style: solid;
+      color: var(--accent-orange);
+      cursor: not-allowed;
+      background: var(--accent-orange-soft);
+    }
+
+    .bookmarklet.disabled .grip,
+    .bookmarklet.disabled .hint {
+      color: var(--accent-orange);
+      border-left-color: var(--accent-orange);
+    }
+
+    /* ─── Tool link ──────────────────────────────────────────────── */
+    .tool-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1.1rem;
+      background: var(--fg);
+      color: var(--bg);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+      margin-top: 0.25rem;
+    }
+
+    .tool-link:hover {
+      background: var(--accent-blue);
+      color: #ffffff;
+    }
+
+    .tool-link:focus-visible {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 3px;
+    }
+
+    .tool-link .arrow {
+      transition: transform 0.15s ease;
+    }
+
+    .tool-link:hover .arrow {
+      transform: translateX(3px);
+    }
+
+    .url-preview {
+      display: block;
+      margin-top: 0.75rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      word-break: break-all;
+      letter-spacing: 0.01em;
+    }
+
+    .url-preview::before {
+      content: '↳ ';
+      color: var(--faint);
+    }
+
+    /* ─── Footer ─────────────────────────────────────────────────── */
+    footer {
+      padding: 1.4rem var(--pad-x);
+      border-top: 1px solid var(--border);
+      font-size: 0.68rem;
+      color: var(--faint);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* ─── Motion & responsive ────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar .meta { display: none; }
+      .bookmarklet .hint { display: none; }
+      .step-body { font-size: 0.875rem; }
+      footer { font-size: 0.62rem; }
+    }
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="crumb">
+    <span class="dot" aria-hidden="true"></span>
+    <span>IDOL · CTP</span>
+    <span class="meta">/ tools</span>
+  </div>
+  <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+    <svg id="theme-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+      <circle cx="8" cy="8" r="3.4"/>
+      <path d="M8 1.2v1.6M8 13.2v1.6M14.8 8h-1.6M2.8 8H1.2M12.95 3.05l-1.13 1.13M4.18 11.82l-1.13 1.13M12.95 12.95l-1.13-1.13M4.18 4.18L3.05 3.05"/>
+    </svg>
+    <span id="theme-label">Dark</span>
+  </button>
+</header>
+
+<main>
+  <h1>Tools for IDOL Certified Payroll Transcript Processing</h1>
+
+  <section class="step">
+    <div class="step-header">
+      <span class="step-num">01</span>
+      <span>Download</span>
+      <span class="step-divider" aria-hidden="true"></span>
+    </div>
+    <div class="step-body">
+      <p>Drag the bookmarklet below to your browser's bookmarks bar. Then click on that bookmark when you are on an IDOL CTP search results page and it will download all the unredacted CTP PDFs to your computer.</p>
+      <a id="bookmarklet"
+         class="bookmarklet"
+         href="#"
+         draggable="true"
+         role="button"
+         aria-label="Download CTP PDFs — drag to your bookmarks bar">
+        <svg class="grip" width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
+          <circle cx="2.2" cy="2.4" r="1.1"/>
+          <circle cx="2.2" cy="7"   r="1.1"/>
+          <circle cx="2.2" cy="11.6" r="1.1"/>
+          <circle cx="7.2" cy="2.4" r="1.1"/>
+          <circle cx="7.2" cy="7"   r="1.1"/>
+          <circle cx="7.2" cy="11.6" r="1.1"/>
+        </svg>
+        <span class="name">Download CTP PDFs</span>
+        <span class="hint">drag to bookmarks bar</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step-header">
+      <span class="step-num">02</span>
+      <span>Pivot</span>
+      <span class="step-divider" aria-hidden="true"></span>
+    </div>
+    <div class="step-body">
+      <p>After all of the CTPs you want have been downloaded, go to the link below and drag all of the PDFs over to the upload box on that page.</p>
+      <a class="tool-link"
+         href="https://mrldclmcc.github.io/idol_ctp/pivots.html"
+         target="_blank"
+         rel="noopener noreferrer">
+        <span>Open Pivot Tool</span>
+        <svg class="arrow" width="14" height="10" viewBox="0 0 14 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">
+          <path d="M1 5h12M8.5 1l4 4-4 4"/>
+        </svg>
+      </a>
+      <span class="url-preview">mrldclmcc.github.io/idol_ctp/pivots.html</span>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>Single-file · runs in your browser</span>
+  <span>No data leaves your machine</span>
+</footer>
+
+<script>
+  // ── Apply bookmarklet to the draggable link ──────────────────────
+  (function () {
+    const link = document.getElementById('bookmarklet');
+    const nameEl = link.querySelector('.name');
+    const hintEl = link.querySelector('.hint');
+
+    const hasHref = typeof BOOKMARKLET_HREF === 'string'
+      && BOOKMARKLET_HREF.trim().length > 0
+      && BOOKMARKLET_HREF.trim().toLowerCase().startsWith('javascript:');
+
+    if (hasHref) {
+      link.href = BOOKMARKLET_HREF;
+    } else {
+      link.classList.add('disabled');
+      link.removeAttribute('href');
+      link.setAttribute('aria-disabled', 'true');
+      link.removeAttribute('draggable');
+      if (nameEl) nameEl.textContent = 'Bookmarklet not configured';
+      if (hintEl) hintEl.textContent = 'see top of index.html';
+    }
+  })();
+
+  // ── Theme toggle ─────────────────────────────────────────────────
+  (function () {
+    const btn   = document.getElementById('theme-toggle');
+    const label = document.getElementById('theme-label');
+    const icon  = document.getElementById('theme-icon');
+    const root  = document.documentElement;
+
+    const sunPath = '<circle cx="8" cy="8" r="3.4"/><path d="M8 1.2v1.6M8 13.2v1.6M14.8 8h-1.6M2.8 8H1.2M12.95 3.05l-1.13 1.13M4.18 11.82l-1.13 1.13M12.95 12.95l-1.13-1.13M4.18 4.18L3.05 3.05"/>';
+    const moonPath = '<path d="M12.5 9.2A5.4 5.4 0 0 1 6.8 3.5 5.4 5.4 0 1 0 12.5 9.2z"/>';
+
+    function apply(theme) {
+      root.setAttribute('data-theme', theme);
+      const isDark = theme === 'dark';
+      label.textContent = isDark ? 'Light' : 'Dark';
+      icon.innerHTML = isDark ? moonPath : sunPath;
+      btn.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+      try { localStorage.setItem('ctp-theme', theme); } catch (e) {}
+    }
+
+    let stored = null;
+    try { stored = localStorage.getItem('ctp-theme'); } catch (e) {}
+
+    if (stored === 'dark' || stored === 'light') {
+      apply(stored);
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      apply(prefersDark ? 'dark' : 'light');
+    }
+
+    btn.addEventListener('click', function () {
+      const current = root.getAttribute('data-theme');
+      apply(current === 'dark' ? 'light' : 'dark');
+    });
+
+    // Respond to system theme changes if user hasn't chosen explicitly
+    try {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+        let s = null;
+        try { s = localStorage.getItem('ctp-theme'); } catch (err) {}
+        if (!s) apply(e.matches ? 'dark' : 'light');
+      });
+    } catch (e) {}
+  })();
+</script>
+
+</body>
+</html>
